@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        input, button { margin: 5px; padding: 8px; }
+        button { cursor: pointer; }
+        .contact-list { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+        .contact { padding: 5px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Contact Management System</h2>
+        <div>
+            <input type="text" id="name" placeholder="Name">
+            <input type="text" id="phone" placeholder="Phone">
+            <button onclick="addContact()">Add Contact</button>
+        </div>
+        <div>
+            <input type="text" id="keyword" placeholder="Search by keyword (substring)">
+            <button onclick="searchByKeyword()">Search Keyword</button>
+        </div>
+        <div>
+            <input type="text" id="exactName" placeholder="Search by exact name">
+            <button onclick="searchExact()">Search Exact</button>
+        </div>
+        <div>
+            <button onclick="displayForward()">Display All (Forward)</button>
+            <button onclick="displayBackward()">Display All (Backward)</button>
+        </div>
+
+        <div class="contact-list" id="output"></div>
+    </div>
+
+    <script>
+        // Contact class
+        class Contact {
+            constructor(name, phone) {
+                this.name = name;
+                this.phone = phone;
+            }
+        }
+
+        // Node for doubly linked list
+        class Node {
+            constructor(contact) {
+                this.contact = contact;
+                this.prev = null;
+                this.next = null;
+            }
+        }
+
+        // Doubly Linked List
+        class DoublyLinkedList {
+            constructor() {
+                this.head = null;
+                this.tail = null;
+            }
+
+            append(contact) {
+                const newNode = new Node(contact);
+                if (!this.head) {
+                    this.head = this.tail = newNode;
+                } else {
+                    this.tail.next = newNode;
+                    newNode.prev = this.tail;
+                    this.tail = newNode;
+                }
+            }
+
+            getAllForward() {
+                const result = [];
+                let current = this.head;
+                while (current) {
+                    result.push(current.contact);
+                    current = current.next;
+                }
+                return result;
+            }
+
+            getAllBackward() {
+                const result = [];
+                let current = this.tail;
+                while (current) {
+                    result.push(current.contact);
+                    current = current.prev;
+                }
+                return result;
+            }
+        }
+
+        // Contact Manager
+        const hashTable = {};      // name -> Contact object
+        const contactList = new DoublyLinkedList();
+
+        function addContact() {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            if (!name || !phone) {
+                showOutput("Please enter both name and phone.");
+                return;
+            }
+            if (hashTable[name]) {
+                showOutput("Contact already exists.");
+                return;
+            }
+            const contact = new Contact(name, phone);
+            hashTable[name] = contact;
+            contactList.append(contact);
+            showOutput(`Contact added: ${name} - ${phone}`);
+            document.getElementById('name').value = '';
+            document.getElementById('phone').value = '';
+        }
+
+        function searchExact() {
+            const name = document.getElementById('exactName').value.trim();
+            if (!name) {
+                showOutput("Please enter a name to search.");
+                return;
+            }
+            const contact = hashTable[name];
+            if (contact) {
+                showOutput(`Found: ${contact.name} - ${contact.phone}`);
+            } else {
+                showOutput("Not found.");
+            }
+        }
+
+        // Naive substring search
+        function searchByKeyword() {
+            const keyword = document.getElementById('keyword').value.trim().toLowerCase();
+            if (!keyword) {
+                showOutput("Please enter a keyword.");
+                return;
+            }
+            const results = [];
+            for (let name in hashTable) {
+                if (name.toLowerCase().includes(keyword)) {
+                    results.push(hashTable[name]);
+                }
+            }
+            if (results.length === 0) {
+                showOutput(`No matches for "${keyword}".`);
+            } else {
+                let output = `Matches for "${keyword}":\n`;
+                results.forEach(c => output += `${c.name} - ${c.phone}\n`);
+                showOutput(output);
+            }
+        }
+
+        function displayForward() {
+            const contacts = contactList.getAllForward();
+            if (contacts.length === 0) {
+                showOutput("No contacts.");
+                return;
+            }
+            let output = "--- Forward ---\n";
+            contacts.forEach(c => output += `${c.name} - ${c.phone}\n`);
+            showOutput(output);
+        }
+
+        function displayBackward() {
+            const contacts = contactList.getAllBackward();
+            if (contacts.length === 0) {
+                showOutput("No contacts.");
+                return;
+            }
+            let output = "--- Backward ---\n";
+            contacts.forEach(c => output += `${c.name} - ${c.phone}\n`);
+            showOutput(output);
+        }
+
+        function showOutput(message) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = `<pre>${message}</pre>`;
+        }
+    </script>
+</body>
+</html>
